@@ -1,36 +1,94 @@
 import { Dialog } from "@headlessui/react";
-import { useState } from "react";
+import { produce } from "immer";
+import { useReducer, useState } from "react";
 
-const SUSPECTS = ["Грин", "Мастард", "Оркид", "Пикок", "Плам", "Скарлет"];
-const WEAPONS = ["Подсвечник", "Кинжал", "Свинцовая труба", "Револьвер", "Верёвка", "Гаечный ключ"];
-const ROOMS = [
-	"Бальный зал",
-	"Бильярдная",
-	"Зимний сад",
-	"Столовая",
-	"Холл",
-	"Кухня",
-	"Библиотека",
-	"Гостиная",
-	"Кабинет",
+const HEADERS = [
+	["Грин", "Мастард", "Оркид", "Пикок", "Плам", "Скарлет"],
+	["Подсвечник", "Кинжал", "Свинцовая труба", "Револьвер", "Верёвка", "Гаечный ключ"],
+	["Бальный зал", "Бильярдная", "Зимний сад", "Столовая", "Холл", "Кухня", "Библиотека", "Гостиная", "Кабинет"],
 ];
 
 type NoteType = "check" | "x-mark" | "question-mark" | null;
 
-type Sheet = "suspect" | "weapon" | "room" | null;
+type State = {
+	status: "pending" | "noting";
+	sections: { title: string; table: NoteType[][] }[];
+	activeCell: [number, number, number] | null;
+};
+
+const initialState: State = {
+	status: "pending",
+	sections: [
+		{
+			title: "Кто?",
+			table: [
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+			],
+		},
+		{
+			title: "Чем?",
+			table: [
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+			],
+		},
+		{
+			title: "Где ?",
+			table: [
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+				new Array(7).fill(null),
+			],
+		},
+	],
+	activeCell: null,
+};
+
+type Action =
+	| { type: "OpenModal"; payload: { activeCell: [number, number, number] } }
+	| { type: "CloseModal" }
+	| { type: "AddNote"; payload: { noteType: NoteType } };
+
+const reducer = produce((draft: State, action: Action) => {
+	switch (action.type) {
+		case "OpenModal":
+			draft.status = "noting";
+			draft.activeCell = action.payload.activeCell;
+			break;
+
+		case "CloseModal":
+			draft.status = "pending";
+			draft.activeCell = null;
+			break;
+
+		case "AddNote":
+			draft.status = "pending";
+
+			const [sectionIndex, rowIndex, cellIndex] = draft.activeCell as [number, number, number];
+			draft.sections[sectionIndex].table[rowIndex][cellIndex] = action.payload.noteType;
+
+			draft.activeCell = null;
+			break;
+	}
+});
 
 export default function App() {
-	const [modalState, setModalState] = useState<{
-		isOpen: boolean;
-		sheet: Sheet;
-		player: string | null;
-		index: number | null;
-	}>({
-		isOpen: false,
-		sheet: null,
-		player: null,
-		index: null,
-	});
+	const [{ status, sections }, dispatch] = useReducer(reducer, initialState);
 
 	const [playerNameMap, setPlayerNameMap] = useState({
 		player1: "",
@@ -41,57 +99,6 @@ export default function App() {
 		player6: "",
 		player7: "",
 	});
-
-	const [suspectSheet, setSuspectSheet] = useState<{ [key: string]: NoteType[] }>({
-		player1: [null, null, null, null, null, null],
-		player2: [null, null, null, null, null, null],
-		player3: [null, null, null, null, null, null],
-		player4: [null, null, null, null, null, null],
-		player5: [null, null, null, null, null, null],
-		player6: [null, null, null, null, null, null],
-		player7: [null, null, null, null, null, null],
-	});
-
-	const [weaponSheet, setWeaponSheet] = useState<{ [key: string]: NoteType[] }>({
-		player1: [null, null, null, null, null, null],
-		player2: [null, null, null, null, null, null],
-		player3: [null, null, null, null, null, null],
-		player4: [null, null, null, null, null, null],
-		player5: [null, null, null, null, null, null],
-		player6: [null, null, null, null, null, null],
-		player7: [null, null, null, null, null, null],
-	});
-
-	const [roomSheet, setRoomSheet] = useState<{ [key: string]: NoteType[] }>({
-		player1: [null, null, null, null, null, null, null, null, null],
-		player2: [null, null, null, null, null, null, null, null, null],
-		player3: [null, null, null, null, null, null, null, null, null],
-		player4: [null, null, null, null, null, null, null, null, null],
-		player5: [null, null, null, null, null, null, null, null, null],
-		player6: [null, null, null, null, null, null, null, null, null],
-		player7: [null, null, null, null, null, null, null, null, null],
-	});
-
-	function handleModalButtonClick(noteType: NoteType) {
-		if (modalState.player === null || modalState.index === null || modalState.sheet === null)
-			throw new Error("Player, sheet and index are required");
-
-		if (modalState.sheet === "suspect") {
-			let notes = [...suspectSheet[modalState.player]];
-			notes.splice(modalState.index, 1, noteType);
-			setSuspectSheet({ ...suspectSheet, [modalState.player]: notes });
-		} else if (modalState.sheet === "weapon") {
-			let notes = [...weaponSheet[modalState.player]];
-			notes.splice(modalState.index, 1, noteType);
-			setWeaponSheet({ ...weaponSheet, [modalState.player]: notes });
-		} else if (modalState.sheet === "room") {
-			let notes = [...roomSheet[modalState.player]];
-			notes.splice(modalState.index, 1, noteType);
-			setRoomSheet({ ...roomSheet, [modalState.player]: notes });
-		}
-
-		setModalState({ isOpen: false, sheet: null, player: null, index: null });
-	}
 
 	return (
 		<main className="flex flex-col gap-2 p-4 text-sm">
@@ -111,117 +118,68 @@ export default function App() {
 				</div>
 			</section>
 
-			<section className="divide-y rounded bg-slate-700">
-				<h2 className="p-2 border-slate-500">Кто?</h2>
+			{sections.map((section, sectionIndex) => {
+				const headers = HEADERS[sectionIndex];
 
-				<div className="flex divide-x border-slate-500">
-					<div className="divide-y">
-						{SUSPECTS.map((suspect) => (
-							<div key={suspect} className="flex items-center w-24 h-12 px-2 border-slate-500">
-								{suspect}
-							</div>
-						))}
-					</div>
+				return (
+					<section className="rounded bg-slate-700">
+						<h2 className="p-2 border-b border-slate-500">{section.title}</h2>
 
-					<div className="flex divide-x grow border-slate-500">
-						{Object.entries(suspectSheet).map(([player, notes]) => (
-							<div key={player} className="flex flex-col w-full divide-y border-slate-500">
-								{notes.map((note, index) => (
-									<button
-										key={index}
-										type="button"
-										className="flex items-center justify-center h-12 border-slate-500"
-										onClick={() => setModalState({ isOpen: true, sheet: "suspect", player, index })}
+						<div className="divide-y">
+							{section.table.map((row, rowIndex) => (
+								<div key={rowIndex} className="flex h-12 divide-x border-slate-500">
+									<p
+										key={headers[rowIndex]}
+										className="flex items-center w-24 px-2 font-normal text-left border-slate-500"
 									>
-										<NoteTypeIcon noteType={note} />
-									</button>
-								))}
-							</div>
-						))}
-					</div>
-				</div>
-			</section>
+										{headers[rowIndex]}
+									</p>
 
-			<section className="divide-y rounded bg-slate-700">
-				<h2 className="p-2 border-slate-500">Чем?</h2>
-
-				<div className="flex divide-x border-slate-500">
-					<div className="divide-y">
-						{WEAPONS.map((weapon) => (
-							<div key={weapon} className="flex items-center w-24 h-12 px-2 border-slate-500">
-								{weapon}
-							</div>
-						))}
-					</div>
-
-					<div className="flex divide-x grow border-slate-500">
-						{Object.entries(weaponSheet).map(([player, notes]) => (
-							<div key={player} className="flex flex-col w-full divide-y border-slate-500">
-								{notes.map((note, index) => (
-									<button
-										key={index}
-										type="button"
-										className="flex items-center justify-center h-12 border-slate-500"
-										onClick={() => setModalState({ isOpen: true, sheet: "weapon", player, index })}
-									>
-										<NoteTypeIcon noteType={note} />
-									</button>
-								))}
-							</div>
-						))}
-					</div>
-				</div>
-			</section>
-
-			<section className="divide-y rounded bg-slate-700">
-				<h2 className="p-2 border-slate-500">Где?</h2>
-
-				<div className="flex divide-x border-slate-500">
-					<div className="divide-y">
-						{ROOMS.map((room) => (
-							<div key={room} className="flex items-center w-24 h-12 px-2 border-slate-500">
-								{room}
-							</div>
-						))}
-					</div>
-
-					<div className="flex divide-x grow border-slate-500">
-						{Object.entries(roomSheet).map(([player, notes]) => (
-							<div key={player} className="flex flex-col w-full divide-y border-slate-500">
-								{notes.map((note, index) => (
-									<button
-										key={index}
-										type="button"
-										className="flex items-center justify-center h-12 border-slate-500"
-										onClick={() => setModalState({ isOpen: true, sheet: "room", player, index })}
-									>
-										<NoteTypeIcon noteType={note} />
-									</button>
-								))}
-							</div>
-						))}
-					</div>
-				</div>
-			</section>
+									{row.map((note, cellIndex) => (
+										<button
+											key={cellIndex}
+											type="button"
+											className="flex items-center justify-center w-table-cell border-slate-500"
+											onClick={() =>
+												dispatch({ type: "OpenModal", payload: { activeCell: [sectionIndex, rowIndex, cellIndex] } })
+											}
+										>
+											<NoteTypeIcon noteType={note} />
+										</button>
+									))}
+								</div>
+							))}
+						</div>
+					</section>
+				);
+			})}
 
 			<Dialog
 				className="fixed inset-0 z-10 flex items-center justify-center"
-				open={modalState.isOpen}
-				onClose={() => setModalState({ ...modalState, isOpen: false })}
+				open={status === "noting"}
+				onClose={() => dispatch({ type: "CloseModal" })}
 			>
 				<Dialog.Panel className="flex items-center justify-center w-3/4 gap-6 rounded shadow-xl h-44 bg-slate-800 text-slate-300">
-					<button type="button" className="p-4 rounded bg-slate-600" onClick={() => handleModalButtonClick("check")}>
+					<button
+						type="button"
+						className="p-4 rounded bg-slate-600"
+						onClick={() => dispatch({ type: "AddNote", payload: { noteType: "check" } })}
+					>
 						<CheckIcon />
 					</button>
 
-					<button type="button" className="p-4 rounded bg-slate-600" onClick={() => handleModalButtonClick("x-mark")}>
+					<button
+						type="button"
+						className="p-4 rounded bg-slate-600"
+						onClick={() => dispatch({ type: "AddNote", payload: { noteType: "x-mark" } })}
+					>
 						<XMarkIcon />
 					</button>
 
 					<button
 						type="button"
 						className="p-4 rounded bg-slate-600"
-						onClick={() => handleModalButtonClick("question-mark")}
+						onClick={() => dispatch({ type: "AddNote", payload: { noteType: "question-mark" } })}
 					>
 						<QuestionMarkIcon />
 					</button>
