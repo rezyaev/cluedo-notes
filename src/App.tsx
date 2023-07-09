@@ -151,28 +151,20 @@ export default function App() {
 }
 
 function PlayerNamesSection() {
-	const [playerNameMap, setPlayerNameMap] = useState({
-		player1: "",
-		player2: "",
-		player3: "",
-		player4: "",
-		player5: "",
-		player6: "",
-		player7: "",
-	});
+	const [names, setNames] = useState<string[]>(new Array(7).fill(""));
 
 	return (
 		<section className="overflow-hidden rounded bg-slate-700">
 			<div className="flex divide-x border-slate-500">
 				<div className="w-24 p-2 min-w-24 grow-0">Игроки</div>
 
-				{Object.entries(playerNameMap).map(([key, name]) => (
+				{names.map((name, index) => (
 					<input
-						key={key}
+						key={index}
 						type="text"
 						className="min-w-0 text-center grow border-slate-500 bg-slate-700"
 						value={name}
-						onChange={(event) => setPlayerNameMap({ ...playerNameMap, [key]: event.target.value })}
+						onChange={(event) => setNames(names.map((name, i) => (index === i ? event.target.value : name)))}
 					/>
 				))}
 			</div>
