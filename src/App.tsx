@@ -1,6 +1,6 @@
 import { Dialog } from "@headlessui/react";
 import { produce } from "immer";
-import { useReducer, useState } from "react";
+import { useReducer } from "react";
 import { NOTE_TYPES, NoteType, NoteTypeIcon } from "./NoteTypeIcon";
 
 const HEADERS = [
@@ -13,6 +13,7 @@ type State = {
 	status: "pending" | "noting";
 	sections: { title: string; table: NoteType[][] }[];
 	activeCell: [number, number, number] | null;
+	names: string[];
 };
 
 const initialState: State = {
@@ -56,12 +57,14 @@ const initialState: State = {
 		},
 	],
 	activeCell: null,
+	names: new Array(7).fill(""),
 };
 
 type Action =
 	| { type: "OpenModal"; payload: { activeCell: [number, number, number] } }
 	| { type: "CloseModal" }
-	| { type: "AddNote"; payload: { noteType: NoteType } };
+	| { type: "AddNote"; payload: { noteType: NoteType } }
+	| { type: "ChangeName"; payload: { index: number; newName: string } };
 
 const reducer = produce((draft: State, action: Action) => {
 	switch (action.type) {
@@ -83,21 +86,40 @@ const reducer = produce((draft: State, action: Action) => {
 
 			draft.activeCell = null;
 			break;
+
+		case "ChangeName":
+			draft.names[action.payload.index] = action.payload.newName;
+			break;
 	}
 });
 
 export default function App() {
-	const [{ status, sections }, dispatch] = useReducer(reducer, initialState);
+	const [state, dispatch] = useReducer(reducer, initialState);
+	const { status, sections, names } = state;
 
 	return (
 		<main className="flex flex-col gap-2 p-4 text-sm">
-			<PlayerNamesSection />
+			<section className="overflow-hidden rounded bg-slate-700">
+				<div className="flex divide-x border-slate-500">
+					<div className="w-24 p-2 min-w-24 grow-0">Игроки</div>
+
+					{names.map((name, index) => (
+						<input
+							key={index}
+							type="text"
+							className="min-w-0 text-center grow border-slate-500 bg-slate-700"
+							value={name}
+							onChange={(event) => dispatch({ type: "ChangeName", payload: { index, newName: event.target.value } })}
+						/>
+					))}
+				</div>
+			</section>
 
 			{sections.map((section, sectionIndex) => {
 				const headers = HEADERS[sectionIndex];
 
 				return (
-					<section className="rounded bg-slate-700">
+					<section key={sectionIndex} className="rounded bg-slate-700">
 						<h2 className="p-2 border-b border-slate-500">{section.title}</h2>
 
 						<div className="divide-y">
@@ -137,6 +159,7 @@ export default function App() {
 				<Dialog.Panel className="flex items-center justify-center w-3/4 gap-6 rounded shadow-xl h-44 bg-slate-800 text-slate-300">
 					{NOTE_TYPES.map((noteType) => (
 						<button
+							key={noteType}
 							type="button"
 							className="p-4 rounded bg-slate-600"
 							onClick={() => dispatch({ type: "AddNote", payload: { noteType } })}
@@ -147,27 +170,5 @@ export default function App() {
 				</Dialog.Panel>
 			</Dialog>
 		</main>
-	);
-}
-
-function PlayerNamesSection() {
-	const [names, setNames] = useState<string[]>(new Array(7).fill(""));
-
-	return (
-		<section className="overflow-hidden rounded bg-slate-700">
-			<div className="flex divide-x border-slate-500">
-				<div className="w-24 p-2 min-w-24 grow-0">Игроки</div>
-
-				{names.map((name, index) => (
-					<input
-						key={index}
-						type="text"
-						className="min-w-0 text-center grow border-slate-500 bg-slate-700"
-						value={name}
-						onChange={(event) => setNames(names.map((name, i) => (index === i ? event.target.value : name)))}
-					/>
-				))}
-			</div>
-		</section>
 	);
 }
