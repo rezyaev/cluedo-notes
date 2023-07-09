@@ -91,33 +91,9 @@ const reducer = produce((draft: State, action: Action) => {
 export default function App() {
 	const [{ status, sections }, dispatch] = useReducer(reducer, initialState);
 
-	const [playerNameMap, setPlayerNameMap] = useState({
-		player1: "",
-		player2: "",
-		player3: "",
-		player4: "",
-		player5: "",
-		player6: "",
-		player7: "",
-	});
-
 	return (
 		<main className="flex flex-col gap-2 p-4 text-sm">
-			<section className="overflow-hidden rounded bg-slate-700">
-				<div className="flex divide-x border-slate-500">
-					<div className="w-24 p-2 min-w-24 grow-0">Игроки</div>
-
-					{Object.entries(playerNameMap).map(([key, name]) => (
-						<input
-							key={key}
-							type="text"
-							className="min-w-0 text-center grow border-slate-500 bg-slate-700"
-							value={name}
-							onChange={(event) => setPlayerNameMap({ ...playerNameMap, [key]: event.target.value })}
-						/>
-					))}
-				</div>
-			</section>
+			<PlayerNamesSection />
 
 			{sections.map((section, sectionIndex) => {
 				const headers = HEADERS[sectionIndex];
@@ -187,6 +163,36 @@ export default function App() {
 				</Dialog.Panel>
 			</Dialog>
 		</main>
+	);
+}
+
+function PlayerNamesSection() {
+	const [playerNameMap, setPlayerNameMap] = useState({
+		player1: "",
+		player2: "",
+		player3: "",
+		player4: "",
+		player5: "",
+		player6: "",
+		player7: "",
+	});
+
+	return (
+		<section className="overflow-hidden rounded bg-slate-700">
+			<div className="flex divide-x border-slate-500">
+				<div className="w-24 p-2 min-w-24 grow-0">Игроки</div>
+
+				{Object.entries(playerNameMap).map(([key, name]) => (
+					<input
+						key={key}
+						type="text"
+						className="min-w-0 text-center grow border-slate-500 bg-slate-700"
+						value={name}
+						onChange={(event) => setPlayerNameMap({ ...playerNameMap, [key]: event.target.value })}
+					/>
+				))}
+			</div>
+		</section>
 	);
 }
 
