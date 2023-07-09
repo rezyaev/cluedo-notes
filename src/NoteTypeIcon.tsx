@@ -1,4 +1,23 @@
-export function CheckIcon() {
+export const NOTE_TYPES = ["check", "x-mark", "question-mark"] as const;
+export type NoteType = (typeof NOTE_TYPES)[number];
+
+export function NoteTypeIcon({ noteType }: { noteType: NoteType }) {
+	switch (noteType) {
+		case "check":
+			return <CheckIcon />;
+
+		case "x-mark":
+			return <XMarkIcon />;
+
+		case "question-mark":
+			return <QuestionMarkIcon />;
+
+		default:
+			return null;
+	}
+}
+
+function CheckIcon() {
 	return (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -13,7 +32,7 @@ export function CheckIcon() {
 	);
 }
 
-export function XMarkIcon() {
+function XMarkIcon() {
 	return (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -28,7 +47,7 @@ export function XMarkIcon() {
 	);
 }
 
-export function QuestionMarkIcon() {
+function QuestionMarkIcon() {
 	return (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"

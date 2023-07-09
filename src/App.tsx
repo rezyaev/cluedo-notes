@@ -1,15 +1,13 @@
 import { Dialog } from "@headlessui/react";
 import { produce } from "immer";
 import { useReducer, useState } from "react";
-import { CheckIcon, XMarkIcon, QuestionMarkIcon } from "./icons";
+import { NOTE_TYPES, NoteType, NoteTypeIcon } from "./NoteTypeIcon";
 
 const HEADERS = [
 	["Грин", "Мастард", "Оркид", "Пикок", "Плам", "Скарлет"],
 	["Подсвечник", "Кинжал", "Свинцовая труба", "Револьвер", "Верёвка", "Гаечный ключ"],
 	["Бальный зал", "Бильярдная", "Зимний сад", "Столовая", "Холл", "Кухня", "Библиотека", "Гостиная", "Кабинет"],
 ];
-
-type NoteType = "check" | "x-mark" | "question-mark" | null;
 
 type State = {
 	status: "pending" | "noting";
@@ -137,29 +135,15 @@ export default function App() {
 				onClose={() => dispatch({ type: "CloseModal" })}
 			>
 				<Dialog.Panel className="flex items-center justify-center w-3/4 gap-6 rounded shadow-xl h-44 bg-slate-800 text-slate-300">
-					<button
-						type="button"
-						className="p-4 rounded bg-slate-600"
-						onClick={() => dispatch({ type: "AddNote", payload: { noteType: "check" } })}
-					>
-						<CheckIcon />
-					</button>
-
-					<button
-						type="button"
-						className="p-4 rounded bg-slate-600"
-						onClick={() => dispatch({ type: "AddNote", payload: { noteType: "x-mark" } })}
-					>
-						<XMarkIcon />
-					</button>
-
-					<button
-						type="button"
-						className="p-4 rounded bg-slate-600"
-						onClick={() => dispatch({ type: "AddNote", payload: { noteType: "question-mark" } })}
-					>
-						<QuestionMarkIcon />
-					</button>
+					{NOTE_TYPES.map((noteType) => (
+						<button
+							type="button"
+							className="p-4 rounded bg-slate-600"
+							onClick={() => dispatch({ type: "AddNote", payload: { noteType } })}
+						>
+							<NoteTypeIcon noteType={noteType} />
+						</button>
+					))}
 				</Dialog.Panel>
 			</Dialog>
 		</main>
@@ -194,20 +178,4 @@ function PlayerNamesSection() {
 			</div>
 		</section>
 	);
-}
-
-function NoteTypeIcon({ noteType }: { noteType: NoteType }) {
-	switch (noteType) {
-		case "check":
-			return <CheckIcon />;
-
-		case "x-mark":
-			return <XMarkIcon />;
-
-		case "question-mark":
-			return <QuestionMarkIcon />;
-
-		default:
-			return null;
-	}
 }
