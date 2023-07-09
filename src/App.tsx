@@ -41,7 +41,7 @@ const initialState: State = {
 			],
 		},
 		{
-			title: "Где ?",
+			title: "Где?",
 			table: [
 				new Array(7).fill(null),
 				new Array(7).fill(null),
