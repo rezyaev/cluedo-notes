@@ -1,6 +1,6 @@
 import { Dialog } from "@headlessui/react";
 import { produce } from "immer";
-import { useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { NOTE_TYPES, NoteType, NoteTypeIcon } from "./NoteTypeIcon";
 
 const HEADERS = [
@@ -15,6 +15,15 @@ type State = {
 	activeCell: [number, number, number] | null;
 	names: string[];
 };
+
+function getCachedState(): State {
+	const cachedState = localStorage.getItem("state");
+	if (cachedState) {
+		return JSON.parse(cachedState);
+	}
+
+	return initialState;
+}
 
 const initialState: State = {
 	status: "pending",
@@ -64,7 +73,8 @@ type Action =
 	| { type: "OpenModal"; payload: { activeCell: [number, number, number] } }
 	| { type: "CloseModal" }
 	| { type: "AddNote"; payload: { noteType: NoteType } }
-	| { type: "ChangeName"; payload: { index: number; newName: string } };
+	| { type: "ChangeName"; payload: { index: number; newName: string } }
+	| { type: "Clear" };
 
 const reducer = produce((draft: State, action: Action) => {
 	switch (action.type) {
@@ -90,15 +100,36 @@ const reducer = produce((draft: State, action: Action) => {
 		case "ChangeName":
 			draft.names[action.payload.index] = action.payload.newName;
 			break;
+
+		case "Clear":
+			draft = initialState;
+			break;
 	}
+
+	return draft;
 });
 
 export default function App() {
-	const [state, dispatch] = useReducer(reducer, initialState);
+	const [state, dispatch] = useReducer(reducer, null, getCachedState);
 	const { status, sections, names } = state;
+
+	useEffect(() => {
+		localStorage.setItem("state", JSON.stringify(state));
+	}, [state]);
 
 	return (
 		<main className="flex flex-col gap-2 p-4 text-sm">
+			<button
+				type="button"
+				className="self-end px-2 py-1 mb-2 border rounded border-slate-600"
+				onClick={() => {
+					localStorage.clear();
+					dispatch({ type: "Clear" });
+				}}
+			>
+				Очистить
+			</button>
+
 			<section className="overflow-hidden rounded bg-slate-700">
 				<div className="flex divide-x border-slate-500">
 					<div className="w-24 p-2 min-w-24 grow-0">Игроки</div>
